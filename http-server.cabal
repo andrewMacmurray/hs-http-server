@@ -1,0 +1,51 @@
+name:                http-server
+version:             0.1.0.0
+description:         8th Light Cob Spec Compliant Http Server
+homepage:            https://github.com/andrewMacmurray/hs-http-server#readme
+license:             MIT
+license-file:        LICENSE
+author:              Andrew MacMurray
+copyright:           2018 Andrew MacMurray
+category:            Web
+build-type:          Simple
+extra-source-files:  README.md
+cabal-version:       >=1.10
+
+library
+  hs-source-dirs:      src
+  exposed-modules:     Http.Server.Socket
+                     , Http.Server.Request
+                     , Http.Server.Handler
+                     , Http.Server.Response
+                     , Http.Server
+  build-depends:       base >= 4.7 && < 5
+                     , network
+                     , bytestring
+                     , attoparsec
+                     , http-types
+                     , case-insensitive
+  default-language:    Haskell2010
+
+executable http-server
+  hs-source-dirs:      app
+  main-is:             Main.hs
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  build-depends:       base
+                     , http-server
+  default-language:    Haskell2010
+
+test-suite http-server-test
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      test
+  main-is:             Spec.hs
+  build-depends:       base
+                     , http-server
+                     , hspec
+                     , network
+                     , bytestring
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  default-language:    Haskell2010
+
+source-repository head
+  type:     git
+  location: https://github.com/andrewMacmurray/hs-http-server
