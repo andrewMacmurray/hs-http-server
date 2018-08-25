@@ -20,13 +20,16 @@ mockServerSocket socket =
 
 mockSocket :: B.ByteString -> (B.ByteString -> IO ()) -> IO Socket
 mockSocket input onSend = do
-  leftOver <- newMVar input
+  remainingInput <- newMVar input
   return
     Socket
-    {send = onSend, receive = recv' leftOver, close = return ()}
+    { send = onSend
+    , receive = receive remainingInput
+    , close = return ()
+    }
   where
-    recv' leftOver i =
-      modifyMVar leftOver $ return . swap . B.splitAt i
+    receive remainingInput maxBytes =
+      modifyMVar remainingInput $ return . swap . B.splitAt maxBytes
 
 spec :: Spec
 spec = do
@@ -43,8 +46,7 @@ spec = do
           handler = const $ respond "should not reach this handler"
           socket = mockSocket input $ shouldBe output
       mockServerSocket socket >>= S.runRequest handler
-    it
-      "responds with internal server error if handler throws an exception" $ do
+    it "responds with server error if handler throws an exception" $ do
       let input = "GET / HTTP/1.1\r\n\r\n"
           output = "HTTP/1.1 500 Internal Server Error\r\n\r\n"
           handler = const $ error "whoops"
