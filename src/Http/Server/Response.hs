@@ -40,10 +40,11 @@ contentLengthHeader :: B.ByteString -> [Header]
 contentLengthHeader body =
   case B.length body of
     0 -> []
-    n -> [(hContentLength, C.pack $ show n)]
+    n -> [(hContentLength, render n)]
 
 renderStatus :: Status -> B.ByteString
 renderStatus Status {..} =
   mconcat [render statusCode, " ", statusMessage, "\r\n"]
-  where
-    render = C.pack . show
+
+render :: Show a => a -> B.ByteString
+render = C.pack . show

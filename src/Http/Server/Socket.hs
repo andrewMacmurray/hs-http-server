@@ -11,8 +11,8 @@ import qualified Network.Socket            as NS
 import qualified Network.Socket.ByteString as NSB
 
 data ServerSocket = ServerSocket
-  { accept :: IO Socket
-  , close' :: IO ()
+  { accept      :: IO Socket
+  , closeServer :: IO ()
   }
 
 data Socket = Socket
@@ -31,7 +31,7 @@ fromBoundNetworkSocket :: NS.Socket -> ServerSocket
 fromBoundNetworkSocket socket =
   ServerSocket
   { accept = (fromNetworkSocket . fst) <$> NS.accept socket
-  , close' = NS.close socket
+  , closeServer = NS.close socket
   }
 
 fromNetworkSocket :: NS.Socket -> Socket

@@ -6,13 +6,11 @@ module Http.Server.Request
   ) where
 
 import           Control.Monad              (void)
-import           Data.Attoparsec.ByteString
+import           Data.Attoparsec.ByteString (Parser)
 import qualified Data.Attoparsec.ByteString as A
-import           Data.Attoparsec.Combinator (atEnd)
+import qualified Data.Attoparsec.Combinator as AC
 import           Data.ByteString            as B
 import qualified Data.CaseInsensitive       as CI
-import           Data.Monoid                ((<>))
-import           Data.Word                  (Word8)
 import           Network.HTTP.Types         hiding (parseMethod)
 
 data Request = Request
@@ -21,12 +19,12 @@ data Request = Request
   , params  :: Query
   , headers :: [Header]
   , body    :: B.ByteString
-  }
+  } deriving (Eq, Show)
 
-parseRequest :: B.ByteString -> Either String Request
-parseRequest rawRequest = eitherResult $ feed result ""
+parseRequest :: B.ByteString -> Maybe Request
+parseRequest rawRequest = A.maybeResult $ A.feed result ""
   where
-    result = parse parseRequest' rawRequest
+    result = A.parse parseRequest' rawRequest
 
 parseRequest' :: Parser Request
 parseRequest' = do
@@ -49,32 +47,32 @@ parseRequest' = do
 
 parseBody :: Parser ByteString
 parseBody = do
-  noBody <- atEnd
+  noBody <- AC.atEnd
   if noBody
     then return ""
-    else clrf >> takeByteString
+    else clrf >> A.takeByteString
 
 parseHeaders :: Parser [Header]
-parseHeaders = option [] $ many' parseHeader
+parseHeaders = A.option [] $ A.many' parseHeader
 
 parseHeader :: Parser Header
 parseHeader = do
-  name <- A.takeWhile $ notInClass ":\r\n"
+  name <- A.takeWhile $ A.notInClass ":\r\n"
   skipString ": "
-  value <- A.takeWhile $ notInClass "\r"
+  value <- A.takeWhile $ A.notInClass "\r"
   clrf
   return (CI.mk name, value)
 
 parseMethod :: Parser Method
-parseMethod = choice standardMethods
+parseMethod = A.choice standardMethods
   where
-    standardMethods = (string . renderStdMethod) <$> enumFrom GET
+    standardMethods = (A.string . renderStdMethod) <$> enumFrom GET
 
 parseUri :: Parser (B.ByteString, Query)
 parseUri = do
-  slash <- string "/"
+  slash <- A.string "/"
   uri <- A.takeWhile notSpace
-  return . fromFullUri $ slash <> uri
+  return . fromFullUri $ mconcat [slash, uri]
   where
     notSpace = (/= 32)
 
@@ -97,4 +95,4 @@ skipSpace :: Parser ()
 skipSpace = skipString " "
 
 skipString :: B.ByteString -> Parser ()
-skipString = void . string
+skipString = void . A.string

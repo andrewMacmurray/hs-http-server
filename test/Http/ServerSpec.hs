@@ -14,7 +14,9 @@ mockServerSocket :: IO Socket -> IO ServerSocket
 mockServerSocket socket =
   return $
   ServerSocket
-  {accept = socket, close' = error "should not have closed"}
+  { accept = socket
+  , closeServer = error "server socket should not have closed"
+  }
 
 mockSocket :: B.ByteString -> (B.ByteString -> IO ()) -> IO Socket
 mockSocket input onSend = do
