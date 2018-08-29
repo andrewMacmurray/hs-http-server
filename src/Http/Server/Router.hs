@@ -8,6 +8,7 @@ module Http.Server.Router
   , options
   , routes
   , matchRoute
+  , Uri
   , Route
   , Routes
   ) where
@@ -23,6 +24,7 @@ import           Http.Server.Internal.Request  (Request)
 import qualified Http.Server.Internal.Request  as Req
 import           Http.Server.Internal.Response (Response)
 import qualified Http.Server.Internal.Response as Res
+import           Network.HTTP.Types            (StdMethod (..))
 import qualified Network.HTTP.Types            as N
 import qualified Network.HTTP.Types.Header     as H
 
@@ -33,7 +35,7 @@ newtype Route =
   Route (RoutePattern, Handler)
 
 data RoutePattern = RoutePattern
-  { method :: N.Method
+  { method :: N.StdMethod
   , uri    :: Uri
   } deriving (Eq, Show, Ord)
 
@@ -41,18 +43,18 @@ type Uri = B.ByteString
 
 -- Configuration functions for individual routes
 get :: Uri -> Handler -> Route
-get = mkRoute N.methodGet
+get = mkRoute GET
 
 put :: Uri -> Handler -> Route
-put = mkRoute N.methodPut
+put = mkRoute PUT
 
 post :: Uri -> Handler -> Route
-post = mkRoute N.methodPost
+post = mkRoute POST
 
 options :: Uri -> Handler -> Route
-options = mkRoute N.methodOptions
+options = mkRoute OPTIONS
 
-mkRoute :: N.Method -> Uri -> Handler -> Route
+mkRoute :: StdMethod -> Uri -> Handler -> Route
 mkRoute method uri h = Route (RoutePattern method uri, h)
 
 routes :: [Route] -> Routes
@@ -81,10 +83,10 @@ isNotAllowed req routes = noMatch && hasOptions req routes
     noMatch = isNothing matchedRoute
 
 isOptionsRequest :: Request -> Bool
-isOptionsRequest req = Req.method req == N.methodOptions
+isOptionsRequest req = Req.method req == OPTIONS
 
 toOptionsRoute :: RoutePattern -> RoutePattern
-toOptionsRoute routePattern = routePattern {method = N.methodOptions}
+toOptionsRoute routePattern = routePattern {method = OPTIONS}
 
 hasOptions :: Request -> Routes -> Bool
 hasOptions req routes = isJust $ lookupRoute opts routes
@@ -97,11 +99,11 @@ withAllowedMethods routes routePattern handler =
   where
     withAllowed res = res {Res.headers = allowed : Res.headers res}
     allowed = (H.hAllow, intercalate "," methods)
-    methods = getAllowedMethods routes routePattern
+    methods = N.renderStdMethod <$> allowedMethods routes routePattern
 
-getAllowedMethods :: Routes -> RoutePattern -> [N.Method]
-getAllowedMethods (Routes routes) pattern =
-  nub . map method . filter sameUri $ M.keys routes
+allowedMethods :: Routes -> RoutePattern -> [StdMethod]
+allowedMethods (Routes routes) pattern =
+  nub . fmap method . filter sameUri $ M.keys routes
   where
     sameUri p = uri p == uri pattern
 

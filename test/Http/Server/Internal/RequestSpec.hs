@@ -12,11 +12,11 @@ spec =
   describe "parseRequest" $ do
     it "parses HTTP method correctly" $ do
       let req = R.parseRequest "GET / HTTP/1.1\r\n\r\n"
-      R.method <$> req `shouldBe` Just methodGet
+      R.method <$> req `shouldBe` Just GET
       R.uri <$> req `shouldBe` Just "/"
     it "parses standard methods" $ do
       let req = R.parseRequest "POST /hello HTTP/1.1\r\n\r\n"
-      R.method <$> req `shouldBe` Just methodPost
+      R.method <$> req `shouldBe` Just POST
     it "parses uri with query param" $ do
       let req = R.parseRequest "GET /hello?foo=bar HTTP/1.1\r\n\r\n"
       R.params <$> req `shouldBe` Just [("foo", Just "bar")]

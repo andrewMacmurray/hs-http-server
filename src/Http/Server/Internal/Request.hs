@@ -14,7 +14,7 @@ import qualified Data.CaseInsensitive       as CI
 import           Network.HTTP.Types         hiding (parseMethod)
 
 data Request = Request
-  { method  :: Method
+  { method  :: StdMethod
   , uri     :: B.ByteString
   , params  :: Query
   , headers :: [Header]
@@ -63,10 +63,11 @@ parseHeader = do
   clrf
   return (CI.mk name, value)
 
-parseMethod :: Parser Method
+parseMethod :: Parser StdMethod
 parseMethod = A.choice standardMethods
   where
-    standardMethods = (A.string . renderStdMethod) <$> enumFrom GET
+    standardMethods = parseStandard <$> enumFrom GET
+    parseStandard m = A.string (renderStdMethod m) >> return m
 
 parseUri :: Parser (B.ByteString, Query)
 parseUri = do
