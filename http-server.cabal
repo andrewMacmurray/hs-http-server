@@ -13,14 +13,16 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Http.Server.Socket
-                     , Http.Server.Request
+  exposed-modules:     Http.Server.Internal.Socket
+                     , Http.Server.Internal.Request
+                     , Http.Server.Internal.Response
+                     , Http.Server.Router
                      , Http.Server.Handler
-                     , Http.Server.Response
                      , Http.Server
   build-depends:       base >= 4.7 && < 5
                      , network
                      , bytestring
+                     , containers
                      , attoparsec
                      , http-types
                      , case-insensitive

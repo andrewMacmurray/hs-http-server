@@ -6,6 +6,8 @@ import Http.Server         (serve)
 import Http.Server.Handler (respond)
 
 main :: IO ()
-main = serve 5000 app
+main = do
+  putStrLn "listening on port 5000"
+  serve 5000 app
   where
-    app = const $ respond "hello"
+    app = respond "hello"

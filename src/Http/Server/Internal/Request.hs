@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Http.Server.Request
+module Http.Server.Internal.Request
   ( Request(..)
   , parseRequest
   ) where
@@ -36,7 +36,7 @@ parseRequest' = do
   clrf
   headers <- parseHeaders
   body <- parseBody
-  return $
+  return
     Request
     { method = method
     , uri = uri

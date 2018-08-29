@@ -2,21 +2,29 @@
 
 module Http.Server.Handler where
 
-import Data.ByteString      as B
-import Http.Server.Request
-import Http.Server.Response
-import Network.HTTP.Types
+import qualified Data.ByteString               as B
+import           Http.Server.Internal.Request  (Request)
+import           Http.Server.Internal.Response (Response (..))
+import qualified Network.HTTP.Types            as N
 
 type Handler = Request -> IO Response
 
-respondOk :: IO Response
+-- Handlers
+respondOk :: Handler
 respondOk = respond ""
 
+respond :: B.ByteString -> Handler
+respond = const . return . Response N.status200 []
+
+-- Default Responses
 badRequest :: IO Response
-badRequest = return $ Response status400 [] ""
+badRequest = return $ Response N.status400 [] ""
+
+notFound :: IO Response
+notFound = return $ Response N.status404 [] ""
 
 serverError :: IO Response
-serverError = return $ Response status500 [] ""
+serverError = return $ Response N.status500 [] ""
 
-respond :: B.ByteString -> IO Response
-respond = return . Response status200 []
+methodNotAllowed :: IO Response
+methodNotAllowed = return $ Response N.methodNotAllowed405 [] ""

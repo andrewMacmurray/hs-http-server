@@ -1,7 +1,7 @@
+{-# LANGUAGE NamedFieldPuns    #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
 
-module Http.Server.Response
+module Http.Server.Internal.Response
   ( Response(..)
   , encodeResponse
   ) where
@@ -18,7 +18,7 @@ data Response = Response
   }
 
 encodeResponse :: Response -> B.ByteString
-encodeResponse Response {..} =
+encodeResponse Response {status, body, headers} =
   mconcat
     [ "HTTP/1.1 "
     , renderStatus status
@@ -43,7 +43,7 @@ contentLengthHeader body =
     n -> [(hContentLength, render n)]
 
 renderStatus :: Status -> B.ByteString
-renderStatus Status {..} =
+renderStatus Status {statusCode, statusMessage} =
   mconcat [render statusCode, " ", statusMessage, "\r\n"]
 
 render :: Show a => a -> B.ByteString
