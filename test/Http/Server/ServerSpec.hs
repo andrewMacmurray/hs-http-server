@@ -1,22 +1,25 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Http.ServerSpec where
+module Http.Server.ServerSpec where
 
 import           Control.Concurrent.MVar
-import qualified Data.ByteString         as B
-import           Data.Tuple              (swap)
-import qualified Http.Server             as S
+import qualified Control.Exception           as E
+import           Control.Monad.Trans         (liftIO)
+import qualified Data.ByteString             as B
+import           Data.Tuple                  (swap)
+import qualified Http.Server                 as S
 import           Http.Server.Handler
-import           Http.Server.Socket
+import           Http.Server.Internal.Socket
+import qualified System.IO.Error             as SE
 import           Test.Hspec
 
 mockServerSocket :: IO Socket -> IO ServerSocket
 mockServerSocket socket =
-  return $
-  ServerSocket
-  { accept = socket
-  , closeServer = error "server socket should not have closed"
-  }
+  return
+    ServerSocket
+    { accept = socket
+    , closeServer = error "server socket should not have closed"
+    }
 
 mockSocket :: B.ByteString -> (B.ByteString -> IO ()) -> IO Socket
 mockSocket input onSend = do
@@ -32,23 +35,24 @@ mockSocket input onSend = do
       modifyMVar remainingInput $ return . swap . B.splitAt maxBytes
 
 spec :: Spec
-spec = do
+spec =
   describe "runRequest" $ do
     it "reads a valid HTTP request from a socket and writes response" $ do
       let input = "GET / HTTP/1.1\r\n\r\n"
           output = "HTTP/1.1 200 OK\r\n\r\n"
-          handler = const respondOk
+          handler = respondOk
           socket = mockSocket input $ shouldBe output
       mockServerSocket socket >>= S.runRequest handler
     it "responds with bad request if send an invalid HTTP request" $ do
       let input = "Wut?"
           output = "HTTP/1.1 400 Bad Request\r\n\r\n"
-          handler = const $ respond "should not reach this handler"
+          handler = respondBS "should not reach this handler"
           socket = mockSocket input $ shouldBe output
       mockServerSocket socket >>= S.runRequest handler
     it "responds with server error if handler throws an exception" $ do
       let input = "GET / HTTP/1.1\r\n\r\n"
           output = "HTTP/1.1 500 Internal Server Error\r\n\r\n"
-          handler = const $ error "whoops"
+          handler :: Handler ()
+          handler = liftIO $ E.ioError $ SE.userError "whoops"
           socket = mockSocket input $ shouldBe output
       mockServerSocket socket >>= S.runRequest handler

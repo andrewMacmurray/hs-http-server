@@ -1,4 +1,4 @@
-module Http.Server.Socket
+module Http.Server.Internal.Socket
   ( ServerSocket(..)
   , Socket(..)
   , listenOn
@@ -37,7 +37,7 @@ fromBoundNetworkSocket socket =
 fromNetworkSocket :: NS.Socket -> Socket
 fromNetworkSocket socket =
   Socket
-  { send = \maxBytes -> void $ NSB.send socket maxBytes
+  { send = void . NSB.send socket
   , receive = NSB.recv socket
   , close = NS.close socket
   }
