@@ -1,13 +1,16 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Http.Server.Internal.ServerSpec where
+module Http.Server.ServerSpec where
 
 import           Control.Concurrent.MVar
+import qualified Control.Exception           as E
+import           Control.Monad.Trans         (liftIO)
 import qualified Data.ByteString             as B
 import           Data.Tuple                  (swap)
 import qualified Http.Server                 as S
-import           Http.Server.Handler         (respond, respondOk)
+import           Http.Server.Handler
 import           Http.Server.Internal.Socket
+import qualified System.IO.Error             as SE
 import           Test.Hspec
 
 mockServerSocket :: IO Socket -> IO ServerSocket
@@ -43,12 +46,13 @@ spec =
     it "responds with bad request if send an invalid HTTP request" $ do
       let input = "Wut?"
           output = "HTTP/1.1 400 Bad Request\r\n\r\n"
-          handler = respond "should not reach this handler"
+          handler = respondBS "should not reach this handler"
           socket = mockSocket input $ shouldBe output
       mockServerSocket socket >>= S.runRequest handler
     it "responds with server error if handler throws an exception" $ do
       let input = "GET / HTTP/1.1\r\n\r\n"
           output = "HTTP/1.1 500 Internal Server Error\r\n\r\n"
-          handler = const $ error "whoops"
+          handler :: Handler ()
+          handler = liftIO $ E.ioError $ SE.userError "whoops"
           socket = mockSocket input $ shouldBe output
       mockServerSocket socket >>= S.runRequest handler
