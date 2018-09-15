@@ -81,7 +81,7 @@ runRouter router@Router {..} = fromMaybe notFound . matchRoute router
 
 matchRoute :: Router a -> Request -> Maybe (HandlerM a)
 matchRoute router@Router {..} req
-  | isNotAllowed req router = Just $ respondNotAllowed router req
+  | isNotAllowed router req = Just $ respondNotAllowed router req
   | isOptionsRequest req = withAllowHeaders
   | otherwise = matchedRoute
   where
@@ -99,17 +99,17 @@ respondNotAllowed router@Router {..} request =
 lookupRoute :: RoutePattern -> Router a -> Maybe (HandlerM a)
 lookupRoute routePattern Router {..} = M.lookup routePattern routes
 
-isNotAllowed :: Request -> Router a -> Bool
-isNotAllowed req routes = noMatch && hasOptions req routes
+isNotAllowed :: Router a -> Request -> Bool
+isNotAllowed router req = noMatch && hasOptions router req
   where
-    matchedRoute = lookupRoute (asPattern req) routes
+    matchedRoute = lookupRoute (asPattern req) router
     noMatch = isNothing matchedRoute
 
 isOptionsRequest :: Request -> Bool
 isOptionsRequest req = Req.method req == OPTIONS
 
-hasOptions :: Request -> Router a -> Bool
-hasOptions req routes = isJust $ lookupRoute opts routes
+hasOptions :: Router a -> Request -> Bool
+hasOptions router req = isJust $ lookupRoute opts router
   where
     opts = asOptions . asPattern $ req
 
@@ -117,10 +117,10 @@ asOptions :: RoutePattern -> RoutePattern
 asOptions routePattern = routePattern {method = OPTIONS}
 
 withAllowedMethods :: Router a -> RoutePattern -> Handler
-withAllowedMethods routes routePattern = H.addHeaders [allowed]
+withAllowedMethods router routePattern = H.addHeaders [allowed]
   where
     allowed = (H.hAllow, intercalate "," methods)
-    methods = N.renderStdMethod <$> allowedMethods routes routePattern
+    methods = N.renderStdMethod <$> allowedMethods router routePattern
 
 allowedMethods :: Router a -> RoutePattern -> [StdMethod]
 allowedMethods Router {..} routePattern =
