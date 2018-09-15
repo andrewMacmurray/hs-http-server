@@ -22,28 +22,27 @@ data Request = Request
   } deriving (Eq, Show)
 
 parseRequest :: B.ByteString -> Maybe Request
-parseRequest rawRequest = A.maybeResult $ A.feed result ""
+parseRequest rawRequest =
+  A.maybeResult $ A.feed (parseRequest' rawRequest) ""
   where
-    result = A.parse parseRequest' rawRequest
-
-parseRequest' :: Parser Request
-parseRequest' = do
-  method <- parseMethod
-  skipSpace
-  (uri, query) <- parseUri
-  skipSpace
-  httpVersion
-  clrf
-  headers <- parseHeaders
-  body <- parseBody
-  return
-    Request
-    { method = method
-    , uri = uri
-    , headers = headers
-    , params = query
-    , body = body
-    }
+    parseRequest' =
+      A.parse $ do
+        method <- parseMethod
+        skipSpace
+        (uri, query) <- parseUri
+        skipSpace
+        httpVersion
+        clrf
+        headers <- parseHeaders
+        body <- parseBody
+        return
+          Request
+          { method = method
+          , uri = uri
+          , headers = headers
+          , params = query
+          , body = body
+          }
 
 parseBody :: Parser ByteString
 parseBody = do

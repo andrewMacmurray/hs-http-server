@@ -52,7 +52,7 @@ spec =
     it "responds with server error if handler throws an exception" $ do
       let input = "GET / HTTP/1.1\r\n\r\n"
           output = "HTTP/1.1 500 Internal Server Error\r\n\r\n"
-          handler :: Handler ()
+          handler :: Handler
           handler = liftIO $ E.ioError $ SE.userError "whoops"
           socket = mockSocket input $ shouldBe output
       mockServerSocket socket >>= S.runRequest handler

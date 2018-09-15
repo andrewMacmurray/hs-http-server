@@ -15,13 +15,13 @@ class Application a where
 instance Application Routes where
   runApp = runRoute
 
-execHandler :: Handler () -> Request -> IO Response
+execHandler :: Handler -> Request -> IO Response
 execHandler handler request = runResponse
   where
     runResponse = execStateT (runRequest request) ok
     runRequest = runReaderT $ runHandler handler
 
-instance Application (Handler ()) where
+instance Application Handler where
   runApp = execHandler
 
 runRoute :: Routes -> Request -> IO Response

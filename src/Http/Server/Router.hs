@@ -31,10 +31,10 @@ import qualified Network.HTTP.Types.Header     as H
 import           Prelude                       hiding (head)
 
 newtype Routes =
-  Routes (M.Map RoutePattern (Handler ()))
+  Routes (M.Map RoutePattern Handler)
 
 newtype Route =
-  Route (RoutePattern, Handler ())
+  Route (RoutePattern, Handler)
 
 data RoutePattern = RoutePattern
   { method :: N.StdMethod
@@ -44,40 +44,40 @@ data RoutePattern = RoutePattern
 type Uri = B.ByteString
 
 -- Configuration functions for individual routes
-get :: Uri -> Handler () -> Route
+get :: Uri -> Handler -> Route
 get = mkRoute GET
 
-put :: Uri -> Handler () -> Route
+put :: Uri -> Handler -> Route
 put = mkRoute PUT
 
-post :: Uri -> Handler () -> Route
+post :: Uri -> Handler -> Route
 post = mkRoute POST
 
 head :: Uri -> Route
 head uri = mkRoute HEAD uri H.respondOk
 
-options :: Uri -> Handler () -> Route
+options :: Uri -> Handler -> Route
 options = mkRoute OPTIONS
 
-mkRoute :: StdMethod -> Uri -> Handler () -> Route
+mkRoute :: StdMethod -> Uri -> Handler -> Route
 mkRoute method uri h = Route (RoutePattern method uri, h)
 
 routes :: [Route] -> Routes
 routes = Routes . M.fromList . map (\(Route r) -> r)
 
 -- Matching a Request with a collection of routes
-matchRoute :: Routes -> Request -> Maybe (Handler ())
+matchRoute :: Routes -> Request -> Maybe Handler
 matchRoute routes req
   | isNotAllowed req routes = notAllowed
-  | isOptionsRequest req = Just setAllowHeader
-  | otherwise = matchedRoute
+  | isOptionsRequest req    = Just setAllowHeader
+  | otherwise               = matchedRoute
   where
     notAllowed = Just $ H.respond H.methodNotAllowed >> setAllowHeader
     matchedRoute = lookupRoute pattern routes
     setAllowHeader = withAllowedMethods routes pattern
     pattern = fromRequest req
 
-lookupRoute :: RoutePattern -> Routes -> Maybe (Handler ())
+lookupRoute :: RoutePattern -> Routes -> Maybe Handler
 lookupRoute pattern (Routes routes) = M.lookup pattern routes
 
 isNotAllowed :: Request -> Routes -> Bool
@@ -97,7 +97,7 @@ hasOptions req routes = isJust $ lookupRoute opts routes
   where
     opts = toOptionsRoute . fromRequest $ req
 
-withAllowedMethods :: Routes -> RoutePattern -> Handler ()
+withAllowedMethods :: Routes -> RoutePattern -> Handler
 withAllowedMethods routes pattern = H.addHeaders [allowed]
   where
     allowed = (H.hAllow, intercalate "," methods)

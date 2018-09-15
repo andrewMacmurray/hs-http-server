@@ -22,7 +22,7 @@ routes =
     , R.options "/foo" H.respondOk
     ]
 
-respondNotFound :: H.Handler ()
+respondNotFound :: H.Handler
 respondNotFound = H.respond H.notFound
 
 spec :: Spec
