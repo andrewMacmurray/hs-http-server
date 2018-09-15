@@ -13,31 +13,28 @@ import qualified Network.HTTP.Types            as N
 import qualified Network.HTTP.Types.Header     as H
 import           Test.Hspec
 
-routes :: R.Routes
-routes =
-  R.routes
+router :: R.Router ()
+router =
+  R.router
     [ R.get "/foo" $ H.respondBS "foo"
     , R.put "/foo" $ H.respondBS "put foo"
     , R.get "/bar" $ H.respondBS "bar"
     , R.options "/foo" H.respondOk
     ]
 
-respondNotFound :: H.Handler
-respondNotFound = H.respond H.notFound
-
 spec :: Spec
 spec = do
-  let runRouter = A.runApp routes
-  describe "matchRoute" $ do
+  let runRouter = A.runApp router
+  describe "runRouter" $ do
     it "matches a request against a collection of routes" $ do
       let res = runRouter $ Request GET "/foo" [] [] ""
       Res.body <$> res >>= shouldBe "foo"
-    it "returns nothing if no route found" $ do
+    it "responds with not found if no route found" $ do
       let res = runRouter $ Request PUT "/bar" [] [] ""
       Res.status <$> res >>= shouldBe N.status404
     context "when requesting a route with options" $ do
       let expectedHeaders = [(H.hAllow, "GET,PUT,OPTIONS")]
-      it "returns not allowed handler if requested method not found" $ do
+      it "responds with not allowed if requested method not found" $ do
         let req = Request POST "/foo" [] [] ""
             res = runRouter req
         Res.status <$> res >>= shouldBe N.methodNotAllowed405

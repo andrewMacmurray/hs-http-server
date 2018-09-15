@@ -27,14 +27,14 @@ encodeResponse Response {status, body, headers} =
     , body
     ]
   where
-    combinedHeaders = headers ++ contentLengthHeader body
+    combinedHeaders = headers <> contentLengthHeader body
 
 renderHeaders :: [Header] -> B.ByteString
 renderHeaders = foldr (B.append . renderHeader) ""
 
 renderHeader :: Header -> B.ByteString
 renderHeader (name, value) =
-  mconcat [CI.original name, ": ", value, "\r\n"]
+  CI.original name <> ": " <> value <> "\r\n"
 
 contentLengthHeader :: B.ByteString -> [Header]
 contentLengthHeader body =
@@ -44,7 +44,7 @@ contentLengthHeader body =
 
 renderStatus :: Status -> B.ByteString
 renderStatus Status {statusCode, statusMessage} =
-  mconcat [render statusCode, " ", statusMessage, "\r\n"]
+  render statusCode <> " " <> statusMessage <> "\r\n"
 
 render :: Show a => a -> B.ByteString
 render = C.pack . show

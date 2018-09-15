@@ -11,9 +11,9 @@ import           Http.Server.Internal.Request  (Request)
 import           Http.Server.Internal.Response (Response (..))
 import qualified Network.HTTP.Types            as N
 
-type Handler = MonadHandler ()
+type Handler = HandlerM ()
 
-newtype MonadHandler a = MonadHandler
+newtype HandlerM a = HandlerM
   { runHandler :: ReaderT Request (StateT Response IO) a
   } deriving ( Functor
              , Applicative
@@ -24,16 +24,24 @@ newtype MonadHandler a = MonadHandler
              )
 
 setStatus :: N.Status -> Handler
-setStatus s = modify $ \res -> res {status = s}
+setStatus status = modify $ \res -> res {status = status}
 
 setBody :: B.ByteString -> Handler
-setBody b = modify $ \res -> res {body = b}
+setBody body = modify $ \res -> res {body = body}
 
 setHeaders :: [N.Header] -> Handler
-setHeaders hs = modify $ \res -> res {headers = hs}
+setHeaders headers = modify $ \res -> res {headers = headers}
 
 addHeaders :: [N.Header] -> Handler
-addHeaders hs = modify $ \res -> res {headers = hs ++ headers res}
+addHeaders newHeaders = modify withHeaders
+  where
+    withHeaders res = res {headers = newHeaders <> headers res}
+
+around :: HandlerM a -> HandlerM b -> HandlerM a
+around handlerA handlerB = do
+  a <- handlerA
+  handlerB
+  return a
 
 -- Handlers
 respondOk :: Handler
