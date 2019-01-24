@@ -9,23 +9,19 @@ import Http.Server.Internal.Request
 import Http.Server.Internal.Response
 import Http.Server.Router
 
-class Application a where
-  runApp :: a -> Request -> IO Response
+class Application m where
+  runApp :: m a -> Request -> IO Response
 
-instance Application Routes where
-  runApp = runRoute
+instance Application HandlerM where
+  runApp = execHandler
 
-execHandler :: Handler () -> Request -> IO Response
+instance Application Router where
+  runApp routes request = execHandler handler request
+    where
+      handler = runRouter routes request
+
+execHandler :: HandlerM a -> Request -> IO Response
 execHandler handler request = runResponse
   where
     runResponse = execStateT (runRequest request) ok
     runRequest = runReaderT $ runHandler handler
-
-instance Application (Handler ()) where
-  runApp = execHandler
-
-runRoute :: Routes -> Request -> IO Response
-runRoute routes req =
-  case matchRoute routes req of
-    Just handler -> execHandler handler req
-    Nothing      -> return notFound

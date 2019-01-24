@@ -22,10 +22,10 @@ data Socket = Socket
   }
 
 listenOn :: Int -> IO ServerSocket
-listenOn port = fromBoundNetworkSocket <$> bindNetworkSocket port
+listenOn port = fromBoundNetworkSocket <$> bindTo port
 
-bindNetworkSocket :: Int -> IO NS.Socket
-bindNetworkSocket = N.listenOn . N.PortNumber . fromIntegral
+bindTo :: Int -> IO NS.Socket
+bindTo = N.listenOn . N.PortNumber . fromIntegral
 
 fromBoundNetworkSocket :: NS.Socket -> ServerSocket
 fromBoundNetworkSocket socket =

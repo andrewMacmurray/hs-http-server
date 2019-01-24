@@ -16,6 +16,7 @@ library
   exposed-modules:     Http.Server.Internal.Socket
                      , Http.Server.Internal.Request
                      , Http.Server.Internal.Response
+                     , Http.Server.Middleware.Static
                      , Http.Server.Application
                      , Http.Server.Router
                      , Http.Server.Handler
